@@ -8,18 +8,26 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
-class GetController extends Controller
+class GetController extends FirebasehelperController
 {
     //
     public function __construct()
     {
-        $this->middleware('jwt.auth');
     }
 
     public function user_detail()
     {
         $data = User::where('id', Auth::user()->id)->first();
         return response()->json(['data' => $data]);
+
+    }
+
+    public function get_token($user_id)
+    {
+        $user = User::where('id', $user_id)->first();
+        $token = Auth::fromUser($user);
+
+        return response()->json(['token' => $token]);
 
     }
 
@@ -241,26 +249,55 @@ class GetController extends Controller
             $rate_sign = 0;
         }
         $com_data->rate_sign = $rate_sign;
-        $port=DB::connection('mysql_admin')->table('portfolio')->where('com_id',$cid)->get();
-        $ports=[];
-        foreach($port as $p){
-            $ports[]=$p;
+        $port = DB::connection('mysql_admin')->table('portfolio')->where('com_id', $cid)->get();
+//        if (DB::connection('mysql_admin')->table('invite')->where([['company_id', '=', $cid], ['post_id', '=', $_GET['postid']]])->count() > 0) {
+//            $com_data->check = true;
+//
+//        } else {
+//            $com_data->check = false;
+//
+//        };
+        $ports = [];
+        foreach ($port as $p) {
+            $ports[] = $p;
         }
-        return response()->json(['data' => $com_data,'port'=>$ports]);
+        return response()->json(['data' => $com_data, 'port' => $ports]);
 
     }
 
+    public function comdetail_withoutauth($cid)
+    {
+        $com_data = DB::connection('mysql_admin')->table('company')->where('id', $cid)->first();
+        $name = DB::connection('mysql_admin')->table('cities')->where('id', $com_data->city_id)->first();
+        $rate = DB::connection('mysql_admin')->table('rating')->where('com_id', $cid)->count();
+
+
+
+        $port = DB::connection('mysql_admin')->table('portfolio')->where('com_id', $cid)->get();
+//        if (DB::connection('mysql_admin')->table('invite')->where([['company_id', '=', $cid], ['post_id', '=', $_GET['postid']]])->count() > 0) {
+//            $com_data->check = true;
+//
+//        } else {
+//            $com_data->check = false;
+//
+//        };
+        $ports = [];
+        foreach ($port as $p) {
+            $ports[] = $p;
+        }
+        return response()->json(['data' => $com_data, 'port' => $ports]);
+
+    }
     public function get_states()
     {
         $states = DB::connection('mysql_admin')->table('states')->where('country_id', 150)->get();
-
         return response()->json(['states' => $states]);
 
     }
-    public function get_frame($first,$second)
-    {
-        $data = DB::connection('mysql')->table('third_work_type')->where([['first_id', '=',$first],['second_id','=',$second]])->get();
 
+    public function get_frame($first, $second)
+    {
+        $data = DB::connection('mysql')->table('third_work_type')->where([['first_id', '=', $first], ['second_id', '=', $second]])->get();
         return response()->json(['data' => $data]);
 
     }
@@ -277,7 +314,6 @@ class GetController extends Controller
             $data->quotation_type = 1;
         } else {
             $data->quotation_type = 0;
-
         }
         $fmessage = DB::table('message')->where([['post_id', '=', $data->id], ['from_user', '=', 'user']]);
         if ($fmessage->count() == 0) {
@@ -300,16 +336,25 @@ class GetController extends Controller
                 $tmsg[] = $tms;
             }
         }
-        $get_request_count=DB::table('request')->where([['post_id','=',$id]]);
-        $all_grc[]='';
+        $get_request_count = DB::table('request')->where([['post_id', '=', $id]]);
+        $all_grc = [];
         foreach ($get_request_count->get() as $grc) {
-            $grc->request_data=DB::connection('mysql_admin')->table('company')->where('user_id', $grc->requester_id)->first();
-            $grc->request_data->post_id=$grc->post_id;
-            $grc->request_data->user_id=$grc->requester_id;
-            $grc->request_data->com_status=$grc->status;
+            $grc->request_data = DB::connection('mysql_admin')->table('company')->where('user_id', $grc->requester_id)->first();
+            $grc->request_data->post_id = $grc->post_id;
+            $grc->request_data->user_id = $grc->requester_id;
+            $grc->request_data->com_status = $grc->status;
             $all_grc[] = $grc->request_data;
         }
-        return response()->json(['data' => $data, 'fmessage' => $fmsg, 'tmessage' => $tmsg,'rq_count'=>$get_request_count->count(),'requested_com'=>$all_grc]);
+        $all_rec = [];
+        $get_rec = DB::connection('mysql_admin')->table('company')->where([['business_hub', '=', '9'], ['status', '>', '2']])->get();
+        foreach ($get_rec as $rec) {
+
+            $check_ub = DB::connection('mysql_admin')->table('user_block')->where([['user_id', '=', $rec->user_id], ['circum', '=', 'unblock']])->count();
+            if ($check_ub > 0) {
+                $all_rec[] = $rec;
+            }
+        }
+        return response()->json(['data' => $data, 'fmessage' => $fmsg, 'tmessage' => $tmsg, 'rq_count' => $get_request_count->count(), 'requested_com' => $all_grc, 'all_rec' => $all_rec]);
     }
 
     public function getactivity(Request $request)
@@ -318,7 +363,9 @@ class GetController extends Controller
         $act = DB::connection('mysql_admin')->table('activities')->where('user_id', $user_id->user_id)->get();
         return response()->json(['data' => $act]);
     }
-    public function get_portfolio(Request $request){
+
+    public function get_portfolio(Request $request)
+    {
 
     }
 

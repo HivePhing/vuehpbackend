@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
-class AddController extends Controller
+class AddController extends FirebasehelperController
 {
     //
     public function __construct()
@@ -122,8 +122,6 @@ class AddController extends Controller
         } else {
             return response()->json(['success' => 'null_error']);
         }
-
-
         return response()->json(['success' => 'success']);
     }
 
@@ -145,10 +143,8 @@ class AddController extends Controller
 
             } elseif ($total_free_and_bonus >= $get_project_data->project_define_point) {
                 //if not rpoint is not enough but total total point is enough
-
                 $new_remaining_point = 0;
                 $new_increase_point =  $total_free_and_bonus - $get_project_data->project_define_point;
-
             } else {
                 DB::table('request')->where([['post_id', '=', $request->post_id], ['requester_id', '=', $request->user_id]])->update(['status' => 'rq']);
                 return response()->json(['data' => $request->post_id]);
@@ -183,7 +179,9 @@ class AddController extends Controller
 
 
         }
-        DB::table('request')->where([['post_id', '=', $request->post_id], ['requester_id', '=', $request->user_id]])->update(['status' => 'con']);
+        if(DB::table('request')->where([['post_id', '=', $request->post_id], ['requester_id', '=', $request->user_id]])->update(['status' => 'con'])){
+
+        }
         return response()->json(['data' => $request->post_id]);
     }
 
@@ -215,5 +213,17 @@ class AddController extends Controller
         DB::table('contact_message')->insert(['title' => $request->title, 'subscription' => $request->subscription, 'user_id' => Auth::user()->id, 'created_at' => Carbon::now(), 'updated_at' => Carbon::now()]);
         return response()->json(['success' => 'success']);
 
+    }
+    public function addinvite(Request $request)
+    {
+        $check=DB::connection('mysql_admin')->table('invite')->where([['post_id','=',$request->postid],['cb_user_id','=',Auth::user()->id],['company_id','=',$request->com_id]])->count();
+        if($check == 0) {
+            if (DB::connection('mysql_admin')->table('invite')->insert(['post_id' => $request->postid, 'cb_user_id' => Auth::user()->id, 'company_id' => $request->com_id, 'created_at' => Carbon::now(), 'updated_at' => Carbon::now()])) {
+               FirebasehelperController::sendnotimsg($body='fff',$title='title',$token='fIArftzyKmk:APA91bFuuNO3YtNLhB7xJ60shvtHMO4Zl-n0BbyXTwlx6CE2SqG56q_GsLCvq_oeFtk5VD5NmXLymH2PBRbfIFk6HkQuPxquCEZAImXKRX5Rizbs7cC2biUGaXgZ6W8Kh9OBYX1nFI_R',$post_id='22');
+                return response()->json(['postid' => $request->all()]);
+            } else {
+                return response()->json(['error' => 'error']);
+            }
+        }
     }
 }

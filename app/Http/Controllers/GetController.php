@@ -250,13 +250,13 @@ class GetController extends FirebasehelperController
         }
         $com_data->rate_sign = $rate_sign;
         $port = DB::connection('mysql_admin')->table('portfolio')->where('com_id', $cid)->get();
-//        if (DB::connection('mysql_admin')->table('invite')->where([['company_id', '=', $cid], ['post_id', '=', $_GET['postid']]])->count() > 0) {
-//            $com_data->check = true;
-//
-//        } else {
-//            $com_data->check = false;
-//
-//        };
+        if (DB::connection('mysql_admin')->table('invite')->where([['company_id', '=', $cid], ['post_id', '=', $_GET['postid']]])->count() > 0) {
+            $com_data->check = true;
+
+        } else {
+            $com_data->check = false;
+
+        };
         $ports = [];
         foreach ($port as $p) {
             $ports[] = $p;
@@ -363,7 +363,6 @@ class GetController extends FirebasehelperController
         $act = DB::connection('mysql_admin')->table('activities')->where('user_id', $user_id->user_id)->get();
         return response()->json(['data' => $act]);
     }
-
     public function get_portfolio(Request $request)
     {
 

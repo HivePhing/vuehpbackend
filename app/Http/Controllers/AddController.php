@@ -124,7 +124,6 @@ class AddController extends FirebasehelperController
         }
         return response()->json(['success' => 'success']);
     }
-
     public function confirm_project(Request $request)
     {
         $get_user_free_plan = DB::connection('mysql_admin')->table('user_get_free_plan')->where('user_id', $request->user_id)->first();

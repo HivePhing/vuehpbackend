@@ -226,14 +226,12 @@ class GetController extends FirebasehelperController
         }
         return response()->json(['success' => 'true', 'data' => $data]);
     }
-
     public function get_cities($state_id)
     {
         $cities = DB::connection('mysql_admin')->table('cities')->where('state_id', $state_id)->get();
         return response()->json(['cities' => $cities]);
 
     }
-
     public function get_com_detail($cid)
     {
         $com_data = DB::connection('mysql_admin')->table('company')->where('id', $cid)->first();
@@ -251,12 +249,13 @@ class GetController extends FirebasehelperController
         $com_data->rate_sign = $rate_sign;
         $port = DB::connection('mysql_admin')->table('portfolio')->where('com_id', $cid)->get();
         if (DB::connection('mysql_admin')->table('invite')->where([['company_id', '=', $cid], ['post_id', '=', $_GET['postid']]])->count() > 0) {
-            $com_data->check = true;
+            $com_data->confirm = true;
 
         } else {
-            $com_data->check = false;
+            $com_data->confirm = false;
 
         };
+
         $ports = [];
         foreach ($port as $p) {
             $ports[] = $p;
